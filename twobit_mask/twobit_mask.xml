@@ -1,0 +1,116 @@
+<?xml version="1.0"?>
+<tool id="twobit_mask" name="twoBitMask" version="1.0">
+    <description>Apply repeat masking to a twoBit file</description>
+
+    <macros>
+        <import>ucsc_macros.xml</import>
+    </macros>
+
+    <expand macro="requirements_twobit" />
+
+    <command detect_errors="exit_code">
+<![CDATA[
+    #if str($maskfile_type.maskfile_type_selector) == "out":
+        ## twoBitMask expects the first column of the RepeatMasker header to
+        ## contain only three leading spaces. RepeatMasker output with large
+        ## SW scores could contain more leading spaces.
+
+        awk '{ sub(/^\s+SW/, "   SW"); print }' "${out_maskfile}" |
+            twoBitMask
+                ${add_mask}
+                -type=.out
+                "${twobit_input}" stdin "${twobit_output}"
+    #else:
+        ## The BED Output from TRF is in bed4+ format, but twoBitMask
+        ## only uses the first three fields of a BED file.
+        ## The extra columns result in a warning from twoBitMask
+
+        awk 'BEGIN { OFS="\t" } { print $1, $2, $3 }' "${bed_maskfile}" |
+            twoBitMask
+                ${add_mask}
+                -type=.bed
+                "${twobit_input}" stdin "${twobit_output}"
+    #end if
+]]>
+    </command>
+    <inputs>
+        <param name="twobit_input" type="data" format="twobit" label="twoBit input file" />
+
+        <param name="add_mask" type="boolean" checked="true"
+            truevalue="-add" falsevalue=""
+            label="Keep pre-existing masking"
+            help="-add" />
+
+        <conditional name="maskfile_type">
+            <param name="maskfile_type_selector" type="select"
+                    label="Choose the type of mask file"
+                    help="Mask file can be a RepeatMasker .out file or a BED file">
+                <option value="out">RepeatMasker .out file</option>
+                <option value="bed" selected="true">BED file</option>
+            </param>
+
+            <when value="out">
+                <param name="out_maskfile" type="data" format="txt"
+                        label="Mask file in RepeatMasker .out format" />
+            </when>
+
+            <when value="bed">
+                <param name="bed_maskfile" type="data" format="bed"
+                        label="Mask file in BED format" />
+            </when>
+        </conditional>
+    </inputs>
+    <outputs>
+        <data name="twobit_output" format="twobit" />
+    </outputs>
+    <tests>
+        <test>
+            <!-- Test standard RepeatMasker .out file -->
+            <param name="twobit_input" value="contig1.2bit" ftype="twobit" />
+            <param name="maskfile_type_selector" value="out" />
+            <param name="out_maskfile" value="contig1.fasta.out" />
+            <output name="twobit_output" file="contig1.out.2bit" />
+        </test>
+        <test>
+            <!-- Test RepeatMasker .out file with extra space in header -->
+            <param name="twobit_input" value="contig1.2bit" ftype="twobit" />
+            <param name="maskfile_type_selector" value="out" />
+            <param name="out_maskfile" value="contig1.fasta.extraspace.out" />
+            <output name="twobit_output" file="contig1.out.2bit" />
+        </test>
+        <test>
+            <!-- Test TRF .bed output -->
+            <param name="twobit_input" value="contig1.2bit" ftype="twobit" />
+            <param name="maskfile_type_selector" value="bed" />
+            <param name="bed_maskfile" value="contig1.fasta.bed" ftype="bed" />
+            <output name="twobit_output" file="contig1.bed.2bit" />
+        </test>
+        <test>
+            <!-- Test keep pre-existing masking -->
+            <param name="twobit_input" value="contig1.bed.2bit" ftype="twobit" />
+            <param name="maskfile_type_selector" value="out" />
+            <param name="out_maskfile" value="contig1.fasta.out" />
+            <output name="twobit_output" file="contig1.both.2bit" />
+        </test>
+        <test>
+            <!-- Test ignore pre-existing masking -->
+            <param name="twobit_input" value="contig1.bed.2bit" ftype="twobit" />
+            <param name="maskfile_type_selector" value="out" />
+            <param name="out_maskfile" value="contig1.fasta.out" />
+            <param name="add_mask" value="" />
+            <output name="twobit_output" file="contig1.out.2bit" />
+        </test>
+    </tests>
+    <help>
+<![CDATA[
+**What it does**
+
+twoBitMask applies a mask to a twoBit file based on repeat information
+from a `RepeatMasker <http://www.repeatmasker.org/>`_ .out file or
+a BED file (e.g., from
+`Tandem Repeats Finder <https://tandem.bu.edu/trf/trf.html>`_).
+
+    ]]></help>
+
+    <expand macro="citations" />
+</tool>

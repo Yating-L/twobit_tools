@@ -1,0 +1,9 @@
+name: twobit_info_340
+owner: yating-l
+description: Obtain sequence information from a twoBit file
+type: unrestricted
+homepage_url: http://hgdownload.soe.ucsc.edu/admin/exe/
+categories: [Sequence Analysis]
+long_description: |
+  This tool reports the length of each scaffold and the gap
+  locations stored in a twoBit file.

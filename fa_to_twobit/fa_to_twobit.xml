@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<tool id="fa_to_twobit" name="faToTwoBit" version="1.0">
+    <description>Converts a FASTA sequence file into a twoBit file</description>
+
+    <macros>
+        <import>ucsc_macros.xml</import>
+    </macros>
+
+    <expand macro="requirements_twobit" />
+
+    <command detect_errors="exit_code">
+<![CDATA[
+    faToTwoBit
+        "${fasta_input}" ${no_mask} ${strip_version} "${twobit_output}"
+]]>
+    </command>
+    <inputs>
+        <param name="fasta_input" type="data" format="fasta" label="FASTA file" />
+
+        <param name="no_mask" type="boolean" checked="true"
+            truevalue="-noMask" falsevalue=""
+            label="Ignore lower-case masking in fa file"
+            help="-noMask" />
+
+        <param name="strip_version" type="boolean" checked="true"
+            truevalue="-stripVersion" falsevalue=""
+            label="Strip off version number after '.' for GenBank accessions"
+            help="-stripVersion" />
+    </inputs>
+    <outputs>
+        <data name="twobit_output" format="twobit" />
+    </outputs>
+    <tests>
+        <test>
+            <param name="fasta_input" value="KB462401.fa" ftype="fasta" />
+            <output name="twobit_output" file="KB462401.unmasked.2bit" />
+        </test>
+        <test>
+            <param name="fasta_input" value="KB462401.fa" ftype="fasta" />
+            <param name="no_mask" value="" />
+            <output name="twobit_output" file="KB462401.masked.2bit" />
+        </test>
+        <test>
+            <param name="fasta_input" value="KB462401.fa" ftype="fasta" />
+            <param name="strip_version" value="" />
+            <output name="twobit_output" file="KB462401.keepversion.2bit" />
+        </test>
+    </tests>
+    <help>
+<![CDATA[
+**What it does**
+
+faToTwoBit converts a DNA sequence file in FASTA format into a
+`twoBit Sequence Archive <https://genome.ucsc.edu/goldenpath/help/twoBit.html>`_.
+
+    ]]></help>
+
+    <expand macro="citations" />
+</tool>

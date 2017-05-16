@@ -1,0 +1,9 @@
+name: twobit_to_fa_340
+owner: yating-l
+description: Convert a twoBit file to FASTA format
+type: unrestricted
+homepage_url: http://hgdownload.soe.ucsc.edu/admin/exe/
+categories: [Convert Formats]
+long_description: |
+  This tool converts either all or a part of a twoBit
+  file into FASTA format.

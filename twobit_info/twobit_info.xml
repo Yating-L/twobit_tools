@@ -1,0 +1,94 @@
+<?xml version="1.0"?>
+<tool id="twobit_info" name="twoBitInfo" version="1.0">
+    <description>Get sequence information from a twoBit file</description>
+
+    <macros>
+        <import>ucsc_macros.xml</import>
+    </macros>
+
+    <expand macro="requirements_twobit" />
+
+    <command detect_errors="exit_code">
+<![CDATA[
+    #if str($output_type.output_type_selector) == "Sequence_Lengths":
+        twoBitInfo
+            ${output_type.no_Ns} "${twobit_input}" stdout |
+            sort -k 2,2nr > "${output}"
+    #else:
+        twoBitInfo -nBed "${twobit_input}" stdout |
+            sort -k 1,1 -k 2,2n |
+            awk 'BEGIN { OFS = "\t" } { print $1, $2, $3, sprintf("gap_%d", idx++ ) }'
+                > "${output}"
+    #end if
+]]>
+    </command>
+
+    <expand macro="environment_LC_COLLATE" />
+
+    <inputs>
+        <param name="twobit_input" type="data" format="twobit" label="twoBit input file" />
+
+        <conditional name="output_type">
+            <!--
+                Because the "when" element in the "data" output does not allow the "label"
+                attribute, the value from the output_type_selector is used as part of the
+                label to help users distinguish the different types of output produced by
+                this tool. The option values are in uppercase so that they conform to the
+                naming convention of the History items that are displayed to the user.
+            -->
+            <param name="output_type_selector" type="select"
+                    label="Type of output file">
+                <option value="Sequence_Lengths" selected="true">Sequence lengths</option>
+                <option value="Gaps">BED records of gaps in each sequence</option>
+            </param>
+
+            <when value="Sequence_Lengths">
+                <param name="no_Ns" type="boolean" checked="false"
+                        truevalue="-noNs" falsevalue=""
+                        label="Exclude gaps (N's) from sequence length"
+                        help="-noNs" />
+            </when>
+
+            <when value="Gaps"></when>
+        </conditional>
+    </inputs>
+    <outputs>
+        <data name="output" format="len"
+                label="${tool.name} on ${on_string}: ${output_type.output_type_selector}">
+            <change_format>
+                <when input="output_type.output_type_selector" value="Gaps" format="bed" />
+            </change_format>
+        </data>
+    </outputs>
+    <tests>
+        <test>
+            <!-- Test report sequence length -->
+            <param name="twobit_input" value="contigs.2bit" ftype="twobit" />
+            <param name="output_type_selector" value="Sequence_Lengths" />
+            <output name="output" file="contigs_chromInfo.tab" />
+        </test>
+        <test>
+            <!-- Test report sequence length excluding gaps -->
+            <param name="twobit_input" value="contigs.2bit" ftype="twobit" />
+            <param name="output_type_selector" value="Sequence_Lengths" />
+            <param name="no_Ns" value="-noNs" />
+            <output name="output" file="contigs_no_Ns_chromInfo.tab" />
+        </test>
+        <test>
+            <!-- Test report gap BED file -->
+            <param name="twobit_input" value="contigs.2bit" ftype="twobit" />
+            <param name="output_type_selector" value="Gaps" />
+            <output name="output" file="contigs_gaps.bed" />
+        </test>
+    </tests>
+    <help>
+<![CDATA[
+**What it does**
+
+twoBitInfo reports the length of each scaffold and the gap locations
+stored in a twoBit Sequence Archive.
+
+    ]]></help>
+
+    <expand macro="citations" />
+</tool>

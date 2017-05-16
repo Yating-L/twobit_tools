@@ -1,0 +1,10 @@
+name: twobit_mask_340
+owner: yating-l
+description: Apply repeat masking to a twoBit file
+type: unrestricted
+homepage_url: http://hgdownload.soe.ucsc.edu/admin/exe/
+categories: [Sequence Analysis]
+long_description: |
+  This tool applies a mask to a twoBit file based on repeat analysis
+  results produced by programs such as RepeatMasker and
+  Tandem Repeats Finder (TRF).

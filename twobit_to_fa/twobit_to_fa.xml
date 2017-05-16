@@ -1,0 +1,188 @@
+<?xml version="1.0"?>
+<tool id="twobit_to_fa" name="twoBitToFa" version="1.0">
+    <description>Convert a twoBit file to FASTA format</description>
+
+    <macros>
+        <import>ucsc_macros.xml</import>
+    </macros>
+
+    <expand macro="requirements_twobit" />
+
+    <command detect_errors="exit_code">
+<![CDATA[
+    @OPTIONAL_PARAM_FUNC@
+
+    #set no_mask = ""
+    #if str($masking_option) == "upper":
+        #set no_mask = "-noMask"
+    #end if
+
+    #set selected_extract_type = str($extract_type.extract_type_selector)
+
+    twoBitToFa ${no_mask}
+        #if $selected_extract_type == "single_sequence":
+            -seq="${extract_type.seq}"
+
+            $optional_param("-start", $extract_type.start)
+            $optional_param("-end", $extract_type.end)
+        #end if
+
+        #if $selected_extract_type == "sequence_list":
+            -seqList="${extract_type.seq_list}"
+        #end if
+
+        #if $selected_extract_type == "bed_file":
+            -bed="${extract_type.bed_regions}"
+            ${extract_type.bed_pos}
+        #end if
+
+        "${twobit_input}" stdout
+
+    ## Add extra option to change soft masked bases to N's
+    #if str($masking_option) == "hard":
+        | awk '{ if (/^>/) { print } else { gsub(/[acgt]/, "N"); print } }'
+    #end if
+
+        > "${fasta_output}"
+]]>
+    </command>
+    <inputs>
+        <param name="twobit_input" type="data" format="twobit" label="twoBit input file" />
+
+        <param name="masking_option" type="select"
+            label="Repeat masking option"
+            help="Specify how repeats within the twoBit file should be represented">
+
+            <option value="upper">Show repeats in uppercase (no masking)</option>
+
+            <option value="lower" selected="true">Show repeats in lowercase (soft masking)</option>
+
+            <option value="hard">Show repeats as N's (hard masking)</option>
+        </param>
+
+        <conditional name="extract_type">
+            <param name="extract_type_selector" type="select"
+                    label="Sequence extraction mode"
+                    help="Specify the method to extract sequences from a twoBit file">
+                <option value="all" selected="true">All sequences</option>
+                <option value="single_sequence">Single sequence</option>
+                <option value="sequence_list">Sequence list</option>
+                <option value="bed_file">BED file</option>
+            </param>
+
+            <when value="all"></when>
+
+            <when value="single_sequence">
+                <param name="seq" type="text" label="Sequence name" />
+                <param name="start" type="integer" min="0" optional="true"
+                        label="Start position (zero-based)"
+                        help="Start at given position in sequence (zero-based)" />
+                <param name="end" type="integer" min="0" optional="true"
+                        label="End position"
+                        help="End at given position in sequence (non-inclusive)" />
+            </when>
+
+            <when value="sequence_list">
+                <param name="seq_list" type="data" format="txt"
+                        label="Sequence list"
+                        help="List of sequence names in the format seqSpec[:start-end]" />
+            </when>
+
+            <when value="bed_file">
+                <param name="bed_regions" type="data" format="bed"
+                        label="BED file"
+                        help="Sequences specified in a BED file (exclude introns)" />
+
+                <param name="bed_pos" type="boolean" checked="false"
+                    truevalue="-bedPos" falsevalue=""
+                    label="use chrom:start-end as the FASTA ID in output file"
+                    help="-bedPos" />
+            </when>
+        </conditional>
+    </inputs>
+    <outputs>
+        <data name="fasta_output" format="fasta" />
+    </outputs>
+    <tests>
+        <test>
+            <!-- Test twoBitToFa with default (soft) masking -->
+            <param name="twobit_input" value="contigs.out.2bit" ftype="twobit" />
+            <output name="fasta_output" file="contigs.out.soft.fa" />
+        </test>
+        <test>
+            <!-- Test twoBitToFa with no masking -->
+            <param name="twobit_input" value="contigs.out.2bit" ftype="twobit" />
+            <param name="masking_option" value="upper" />
+            <output name="fasta_output" file="contigs.out.unmask.fa" />
+        </test>
+        <test>
+            <!-- Test twoBitToFa with hard masking -->
+            <param name="twobit_input" value="contigs.out.2bit" ftype="twobit" />
+            <param name="masking_option" value="hard" />
+            <output name="fasta_output" file="contigs.out.hard.fa" />
+        </test>
+        <test>
+            <!-- Test twoBitToFa for single sequence -->
+            <param name="twobit_input" value="contigs.out.2bit" ftype="twobit" />
+            <param name="extract_type_selector" value="single_sequence" />
+            <param name="seq" value="contig12" />
+            <output name="fasta_output" file="contig12.soft.fa" />
+        </test>
+        <test>
+            <!-- Test twoBitToFa for single sequence with range -->
+            <param name="twobit_input" value="contigs.out.2bit" ftype="twobit" />
+            <param name="extract_type_selector" value="single_sequence" />
+            <param name="seq" value="contig12" />
+            <param name="start" value="1000" />
+            <param name="end" value="2000" />
+            <output name="fasta_output" file="contig12_1000_2000.soft.fa" />
+        </test>
+        <test>
+            <!-- Test twoBitToFa for single sequence with only start position -->
+            <param name="twobit_input" value="contigs.out.2bit" ftype="twobit" />
+            <param name="extract_type_selector" value="single_sequence" />
+            <param name="seq" value="contig12" />
+            <param name="start" value="1000" />
+            <output name="fasta_output" file="contig12_1000_start.soft.fa" />
+        </test>
+        <test>
+            <!-- Test twoBitToFa for seqList -->
+            <param name="twobit_input" value="contigs.out.2bit" ftype="twobit" />
+            <param name="extract_type_selector" value="sequence_list" />
+            <param name="seq_list" value="seq_list.txt" ftype="txt" />
+            <output name="fasta_output" file="contig12_seq_list.soft.fa" />
+        </test>
+        <test>
+            <!-- Test twoBitToFa for bed items -->
+            <param name="twobit_input" value="contigs.out.2bit" ftype="twobit" />
+            <param name="extract_type_selector" value="bed_file" />
+            <param name="bed_regions" value="contigs.genes.bed" ftype="bed" />
+            <output name="fasta_output" file="contigs.genes.fa" />
+        </test>
+        <test>
+            <!-- Test twoBitToFa for bed items with bedPos header -->
+            <param name="twobit_input" value="contigs.out.2bit" ftype="twobit" />
+            <param name="extract_type_selector" value="bed_file" />
+            <param name="bed_regions" value="contigs.genes.bed" ftype="bed" />
+            <param name="bed_pos" value="-bedPos" />
+            <output name="fasta_output" file="contigs.genes.bedPos.fa" />
+        </test>
+    </tests>
+    <help>
+<![CDATA[
+**What it does**
+
+twoBitToFa converts either all or a part of a twoBit file into FASTA format.
+
+.. class:: warningmark
+
+twoBitToFa uses a `zero-start, half-open <http://genome.ucsc.edu/blog/the-ucsc-genome-browser-coordinate-counting-systems/>`_
+coordinate system:
+
+* The first nucleotide of a sequence is at position **0**
+* The last nucleotide of a sequence is at position **end - 1**
+
+    ]]></help>
+
+    <expand macro="citations" />
+</tool>

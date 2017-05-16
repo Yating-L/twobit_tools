@@ -1,0 +1,10 @@
+name: fa_to_twobit_340
+owner: yating-l
+description: Convert FASTA sequences to twoBit format
+type: unrestricted
+homepage_url: http://hgdownload.soe.ucsc.edu/admin/exe/
+categories: [Convert Formats]
+long_description: |
+  This tool converts nucleotide sequences in FASTA format into
+  the twoBit format. The twoBit format allows random access of
+  DNA sequences and can also contain repeat masking information.
