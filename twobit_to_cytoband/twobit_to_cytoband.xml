@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<tool id="twobit_to_cytoband" name="twoBitToCytoband" version="1.0">
+    <description>Creates a cytoband file from a twoBit file</description>
+
+    <macros>
+        <import>ucsc_macros.xml</import>
+    </macros>
+
+    <expand macro="requirements_twobit" />
+
+    <command detect_errors="exit_code">
+<![CDATA[
+    twoBitInfo "${twobit_input}" stdout |
+        sort -k 1,1 -k 2,2n |
+        awk 'BEGIN { OFS="\t" } { print $1, 0, $2, $1, "gneg" }' > "${bed_output}"
+]]>
+    </command>
+
+    <expand macro="environment_LC_COLLATE" />
+
+    <inputs>
+        <param name="twobit_input" type="data" format="twobit" label="twoBit input file" />
+    </inputs>
+    <outputs>
+        <data name="bed_output" format="bed" />
+    </outputs>
+    <tests>
+        <test>
+            <!-- Test create Cytoband bed file from a twoBit file -->
+            <param name="twobit_input" value="contigs.2bit" ftype="twobit" />
+            <output name="bed_output" file="contigs_cytoband.bed" />
+        </test>
+    </tests>
+    <help>
+<![CDATA[
+**What it does**
+
+This tool creates a `Cytoband file <http://genomewiki.ucsc.edu/index.php/Assembly_Hubs#Cytoband_Track>`_
+from a twoBit file to enable quicker navigation of individual scaffolds
+in the UCSC Genome Browser.
+
+    ]]></help>
+
+    <expand macro="citations" />
+</tool>

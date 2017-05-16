@@ -1,0 +1,10 @@
+name: twobit_to_cytoband_340
+owner: yating-l
+description: Creates a cytoband file from a twoBit file
+type: unrestricted
+homepage_url: http://hgdownload.soe.ucsc.edu/admin/exe/
+categories: [Sequence Analysis]
+long_description: |
+  This tool creates a Cytoband file based on a twoBit file to
+  enable quicker navigation of individual scaffolds in the
+  UCSC Genome Browser.
